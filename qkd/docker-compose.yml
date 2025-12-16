@@ -1,0 +1,72 @@
+services:
+  # BB84 Quantum Key Distribution demo
+  qkd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qkd-simulator
+    volumes:
+      - ./src:/app/src:ro
+      - ./demo.py:/app/demo.py:ro
+    command: python demo.py
+
+  # Shor's Algorithm - Break RSA
+  break-rsa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shors-rsa
+    volumes:
+      - ./src:/app/src:ro
+      - ./examples:/app/examples:ro
+    command: python examples/break_rsa.py
+    stdin_open: true
+    tty: true
+
+  # Shor's Algorithm - Break ECDSA
+  break-ecdsa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shors-ecdsa
+    volumes:
+      - ./src:/app/src:ro
+      - ./examples:/app/examples:ro
+    command: python examples/break_ecdsa.py
+    stdin_open: true
+    tty: true
+
+  # Comprehensive quantum threat overview
+  threat-overview:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quantum-threat
+    volumes:
+      - ./src:/app/src:ro
+      - ./examples:/app/examples:ro
+    command: python examples/quantum_threat_overview.py
+    stdin_open: true
+    tty: true
+
+  # Run all tests
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qkd-tests
+    command: pytest -v
+    profiles:
+      - test
+
+  # Interactive shell for experiments
+  shell:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qkd-shell
+    stdin_open: true
+    tty: true
+    command: python
+    profiles:
+      - dev
