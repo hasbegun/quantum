@@ -2,7 +2,7 @@
 
 ## What This Project Does
 
-This project provides a **pure Python implementation** of two NIST-standardized post-quantum digital signature algorithms:
+This project provides implementations of two NIST-standardized post-quantum digital signature algorithms in both **Python** and **C++20**:
 
 - **ML-DSA (FIPS 204)** - Module-Lattice-Based Digital Signature Algorithm
 - **SLH-DSA (FIPS 205)** - Stateless Hash-Based Digital Signature Algorithm
@@ -58,12 +58,34 @@ This project implements the full FIPS 204 and FIPS 205 specifications:
 - Context strings for domain separation
 - Pre-hash mode for large messages
 
-### 3. Practical Cryptographic Patterns
+### 3. Dual Language Support
 
-The examples show real-world usage patterns:
-- API request authentication
-- Document signing workflows
-- Performance/size trade-offs
+- **Python**: Reference implementation for educational purposes
+- **C++20**: High-performance implementation using modern C++ features
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Docker installed and running
+- Make (optional, for convenience commands)
+
+### Run All Tests
+
+```bash
+cd /Users/innox/projects/q/dsa
+
+# Run all tests (Python + C++)
+make test
+
+# Run only Python tests
+make test-py
+
+# Run only C++ tests
+make test-cpp
+```
 
 ---
 
@@ -123,25 +145,30 @@ print(f"Signature valid: {valid}")
 make demo-document
 ```
 
-### Example 3: Algorithm Comparison
+### Example 3: C++ Usage (SLH-DSA)
 
-**Use Case**: Understand the trade-offs between algorithms
+```cpp
+#include "slhdsa/slh_dsa.hpp"
 
-```bash
-make demo-compare
-```
+using namespace slhdsa;
 
-**Output:**
-```
-Algorithm Comparison Results
-============================
+int main() {
+    // Use SHAKE-128f parameter set (fastest)
+    SLHDSA_SHAKE_128f dsa;
 
-                    ML-DSA-44    SLH-DSA-128f
-Public Key Size     1,312 B      32 B
-Secret Key Size     2,560 B      64 B
-Signature Size      2,420 B      17,088 B
-Sign Time           ~1 ms        ~50 ms
-Verify Time         ~0.5 ms      ~5 ms
+    // Generate key pair
+    auto [sk, pk] = dsa.keygen();
+
+    // Sign a message
+    std::vector<uint8_t> message = {'H', 'e', 'l', 'l', 'o'};
+    auto signature = dsa.sign(sk, message);
+
+    // Verify signature
+    bool valid = dsa.verify(pk, message, signature);
+    std::cout << "Valid: " << (valid ? "YES" : "NO") << std::endl;
+
+    return 0;
+}
 ```
 
 ### When to Use Each Algorithm
@@ -159,22 +186,10 @@ Verify Time         ~0.5 ms      ~5 ms
 
 ## How to Run Tests
 
-### Prerequisites
-
-- Docker installed and running
-- Make (optional, for convenience commands)
-
 ### Run All Tests
 
 ```bash
-cd /Users/innox/projects/q/dsa
-
-# Using Make (recommended)
 make test
-
-# Or using Docker directly
-docker build -t dsa .
-docker run --rm dsa python -m pytest tests/ -v
 ```
 
 **Expected output:**
@@ -189,41 +204,21 @@ tests/test_slhdsa.py::test_sign_verify_roundtrip PASSED
 ==================== 40 passed ====================
 ```
 
-### Run ML-DSA Tests Only
+### Run Specific Tests
 
 ```bash
+# Python ML-DSA tests
 make test-mldsa
-```
 
-Tests include:
-- Key generation (deterministic and random)
-- Sign/verify round-trip
-- Context string handling
-- Invalid signature rejection
-- Wrong key rejection
-- All parameter sets (ML-DSA-44, 65, 87)
-
-### Run SLH-DSA Tests Only
-
-```bash
+# Python SLH-DSA tests
 make test-slhdsa
+
+# C++ ML-DSA tests
+make test-mldsa-cpp
+
+# C++ SLH-DSA tests
+make test-slhdsa-cpp
 ```
-
-Tests include:
-- Key generation validity
-- Sign/verify for all parameter sets
-- Deterministic vs randomized signing
-- Message modification detection
-- Signature size verification
-- WOTS+, XMSS, FORS component tests
-
-### Run Tests with Live Code Changes
-
-```bash
-make dev
-```
-
-This mounts your local source code into the container, so you can edit files and re-run tests without rebuilding.
 
 ### Interactive Python Shell
 
@@ -246,31 +241,55 @@ Then try:
 
 ```
 dsa/
-├── src/dsa/
-│   ├── __init__.py          # Unified API exports
-│   ├── mldsa/               # ML-DSA implementation
-│   │   ├── mldsa.py         # Main MLDSA class
-│   │   ├── params.py        # Parameter sets (44, 65, 87)
-│   │   ├── ntt.py           # Number Theoretic Transform
-│   │   ├── poly.py          # Polynomial operations
-│   │   ├── encoding.py      # Bit packing/unpacking
-│   │   └── sampling.py      # Rejection sampling
-│   └── slhdsa/              # SLH-DSA implementation
-│       ├── slh_dsa.py       # Main sign/verify functions
-│       ├── parameters.py    # All 12 parameter sets
-│       ├── wots.py          # WOTS+ one-time signatures
-│       ├── xmss.py          # XMSS Merkle trees
-│       ├── fors.py          # FORS few-time signatures
-│       ├── hypertree.py     # Hypertree structure
-│       └── address.py       # ADRS address scheme
+├── src/
+│   ├── py/dsa/                  # Python implementation
+│   │   ├── __init__.py          # Unified API exports
+│   │   ├── mldsa/               # ML-DSA implementation
+│   │   │   ├── mldsa.py         # Main MLDSA class
+│   │   │   ├── params.py        # Parameter sets (44, 65, 87)
+│   │   │   ├── ntt.py           # Number Theoretic Transform
+│   │   │   ├── poly.py          # Polynomial operations
+│   │   │   ├── encoding.py      # Bit packing/unpacking
+│   │   │   └── sampling.py      # Rejection sampling
+│   │   └── slhdsa/              # SLH-DSA implementation
+│   │       ├── slh_dsa.py       # Main sign/verify functions
+│   │       ├── parameters.py    # All 12 parameter sets
+│   │       ├── wots.py          # WOTS+ one-time signatures
+│   │       ├── xmss.py          # XMSS Merkle trees
+│   │       ├── fors.py          # FORS few-time signatures
+│   │       ├── hypertree.py     # Hypertree structure
+│   │       └── address.py       # ADRS address scheme
+│   └── cpp/                     # C++ implementation
+│       ├── mldsa/               # ML-DSA (FIPS 204)
+│       │   ├── mldsa.hpp        # Main API
+│       │   ├── params.hpp       # Parameter sets
+│       │   ├── ntt.hpp          # Number Theoretic Transform
+│       │   ├── encoding.hpp     # Bit packing
+│       │   ├── sampling.hpp     # Rejection sampling
+│       │   └── utils.hpp/cpp    # Utilities
+│       └── slhdsa/              # SLH-DSA (FIPS 205)
+│           ├── slh_dsa.hpp      # Main API (keygen, sign, verify)
+│           ├── params.hpp       # All 12 parameter sets
+│           ├── address.hpp      # ADRS address scheme
+│           ├── hash_functions.hpp/cpp  # SHAKE256 and SHA2
+│           ├── wots.hpp         # WOTS+ signatures
+│           ├── xmss.hpp         # XMSS Merkle trees
+│           ├── fors.hpp         # FORS signatures
+│           ├── hypertree.hpp    # Hypertree structure
+│           └── utils.hpp/cpp    # Utilities
 ├── tests/
-│   ├── test_mldsa.py        # 18 ML-DSA tests
-│   └── test_slhdsa.py       # 22 SLH-DSA tests
+│   ├── py/                      # Python tests
+│   │   ├── test_mldsa.py        # 18 ML-DSA tests
+│   │   └── test_slhdsa.py       # 22 SLH-DSA tests
+│   └── cpp/                     # C++ tests
+│       ├── test_mldsa.cpp       # ML-DSA test suite
+│       └── test_slhdsa.cpp      # SLH-DSA test suite
 ├── examples/
 │   ├── api_authentication.py
 │   ├── document_signing.py
 │   └── comparison.py
-├── Dockerfile
+├── Dockerfile                   # Python Docker image
+├── Dockerfile.cpp               # C++ Docker image
 ├── Makefile
 ├── docker-compose.yml
 └── pyproject.toml
@@ -280,7 +299,7 @@ dsa/
 
 ## Quick Reference
 
-### ML-DSA API
+### ML-DSA API (Python)
 
 ```python
 from dsa import MLDSA44, MLDSA65, MLDSA87
@@ -301,7 +320,7 @@ valid = dsa.verify(pk, message, sig)
 valid = dsa.verify(pk, message, sig, ctx=b"app-context")
 ```
 
-### SLH-DSA API
+### SLH-DSA API (Python)
 
 ```python
 from dsa import (
@@ -322,6 +341,24 @@ sig = slh_sign(params, message, sk, randomize=False)
 valid = slh_verify(params, message, sig, pk)
 ```
 
+### SLH-DSA API (C++)
+
+```cpp
+#include "slhdsa/slh_dsa.hpp"
+using namespace slhdsa;
+
+// Using convenience class
+SLHDSA_SHAKE_128f dsa;
+auto [sk, pk] = dsa.keygen();
+auto sig = dsa.sign(sk, message);
+bool valid = dsa.verify(pk, message, sig);
+
+// Or using free functions
+auto [sk, pk] = slh_keygen(SLH_DSA_SHAKE_128f);
+auto sig = slh_sign(SLH_DSA_SHAKE_128f, message, sk);
+bool valid = slh_verify(SLH_DSA_SHAKE_128f, message, sig, pk);
+```
+
 ---
 
 ## Make Commands
@@ -329,15 +366,22 @@ valid = slh_verify(params, message, sig, pk)
 | Command | Description |
 |---------|-------------|
 | `make help` | Show all available commands |
-| `make build` | Build Docker image |
-| `make test` | Run all 40 tests |
-| `make test-mldsa` | Run ML-DSA tests only |
-| `make test-slhdsa` | Run SLH-DSA tests only |
+| `make build` | Build all Docker images |
+| `make build-py` | Build Python Docker image |
+| `make build-cpp` | Build C++ Docker image |
+| `make test` | Run all tests (Python + C++) |
+| `make test-py` | Run all Python tests |
+| `make test-cpp` | Run all C++ tests |
+| `make test-mldsa` | Run ML-DSA Python tests |
+| `make test-slhdsa` | Run SLH-DSA Python tests |
+| `make test-mldsa-cpp` | Run ML-DSA C++ tests |
+| `make test-slhdsa-cpp` | Run SLH-DSA C++ tests |
 | `make dev` | Run tests with mounted source |
 | `make shell` | Interactive Python shell |
 | `make demo-api` | API authentication example |
 | `make demo-document` | Document signing example |
 | `make demo-compare` | Algorithm comparison |
+| `make demo-cpp` | C++ ML-DSA demo |
 | `make clean` | Remove Docker resources |
 
 ---
@@ -350,6 +394,17 @@ This is a **reference implementation** for educational purposes. For production 
 - Store secret keys in Hardware Security Modules (HSMs)
 - Follow your organization's key management policies
 - Keep keys separate from signed data
+
+---
+
+## Documentation
+
+- **[Certificate Guide](docs/CERTIFICATE_GUIDE.md)** - Comprehensive guide on creating post-quantum certificates with ML-DSA and SLH-DSA, including:
+  - Algorithm selection guidance
+  - Certificate creation examples (Python & C++)
+  - Use case examples (TLS, API auth, code signing, documents, IoT)
+  - PKI hierarchy examples
+  - Migration strategies from classical to post-quantum
 
 ---
 

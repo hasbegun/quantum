@@ -7,8 +7,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY src/ ./src/
-COPY tests/ ./tests/
+COPY src/py/ ./src/py/
+COPY tests/py/ ./tests/py/
 COPY examples/ ./examples/
 COPY pyproject.toml .
 COPY README.md .
@@ -17,4 +17,4 @@ COPY README.md .
 RUN pip install -e .
 
 # Default command runs tests
-CMD ["python", "-m", "pytest", "tests/", "-v"]
+CMD ["python", "-m", "pytest", "tests/py/", "-v"]

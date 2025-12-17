@@ -1,0 +1,104 @@
+cmake_minimum_required(VERSION 3.20)
+project(dsa VERSION 1.0.0 LANGUAGES CXX)
+
+# C++20 standard
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Compiler flags
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra -Wpedantic -DNDEBUG")
+
+# Find OpenSSL
+find_package(OpenSSL REQUIRED)
+
+# ML-DSA library
+add_library(mldsa STATIC
+    mldsa/utils.cpp
+)
+
+target_include_directories(mldsa PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${OPENSSL_INCLUDE_DIR}
+)
+
+target_link_libraries(mldsa PUBLIC
+    OpenSSL::Crypto
+)
+
+# SLH-DSA library
+add_library(slhdsa STATIC
+    slhdsa/utils.cpp
+    slhdsa/hash_functions.cpp
+)
+
+target_include_directories(slhdsa PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${OPENSSL_INCLUDE_DIR}
+)
+
+target_link_libraries(slhdsa PUBLIC
+    OpenSSL::Crypto
+)
+
+# ML-DSA Test executable
+add_executable(test_mldsa
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/cpp/test_mldsa.cpp
+)
+
+target_link_libraries(test_mldsa PRIVATE
+    mldsa
+)
+
+target_include_directories(test_mldsa PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# SLH-DSA Test executable
+add_executable(test_slhdsa
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/cpp/test_slhdsa.cpp
+)
+
+target_link_libraries(test_slhdsa PRIVATE
+    slhdsa
+)
+
+target_include_directories(test_slhdsa PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# DSA demo executable (ML-DSA + SLH-DSA)
+add_executable(mldsa_demo
+    main.cpp
+)
+
+target_link_libraries(mldsa_demo PRIVATE
+    mldsa
+    slhdsa
+)
+
+# Install targets
+install(TARGETS mldsa slhdsa
+    ARCHIVE DESTINATION lib
+)
+
+install(DIRECTORY mldsa/
+    DESTINATION include/mldsa
+    FILES_MATCHING PATTERN "*.hpp"
+)
+
+install(DIRECTORY slhdsa/
+    DESTINATION include/slhdsa
+    FILES_MATCHING PATTERN "*.hpp"
+)
+
+# CTest support
+enable_testing()
+add_test(NAME mldsa_tests COMMAND test_mldsa)
+add_test(NAME slhdsa_tests COMMAND test_slhdsa)
