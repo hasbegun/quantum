@@ -63,6 +63,15 @@ This project implements the full FIPS 204 and FIPS 205 specifications:
 - **Python**: Reference implementation for educational purposes
 - **C++20**: High-performance implementation using modern C++ features
 
+### 4. Side-Channel Resistant Implementation (SLH-DSA C++)
+
+The C++ SLH-DSA implementation demonstrates constant-time programming techniques:
+
+- **Fixed-iteration loops** - WOTS+ chain always executes maximum iterations
+- **Branchless selection** - Tree traversal uses bit masking instead of if/else
+- **Constant-time comparison** - Signature verification examines all bytes
+- **Memory barriers** - Prevents compiler optimization of security-critical code
+
 ---
 
 ## Quick Start
@@ -302,11 +311,12 @@ dsa/
 │           ├── params.hpp       # All 12 parameter sets
 │           ├── address.hpp      # ADRS address scheme
 │           ├── hash_functions.hpp/cpp  # SHAKE256 and SHA2
-│           ├── wots.hpp         # WOTS+ signatures
-│           ├── xmss.hpp         # XMSS Merkle trees
-│           ├── fors.hpp         # FORS signatures
-│           ├── hypertree.hpp    # Hypertree structure
-│           └── utils.hpp/cpp    # Utilities
+│           ├── wots.hpp         # WOTS+ signatures (constant-time)
+│           ├── xmss.hpp         # XMSS Merkle trees (constant-time)
+│           ├── fors.hpp         # FORS signatures (constant-time)
+│           ├── hypertree.hpp    # Hypertree structure (constant-time)
+│           ├── ct_utils.hpp     # Constant-time utilities
+│           └── utils.hpp/cpp    # General utilities
 ├── tests/
 │   ├── py/                      # Python tests
 │   │   ├── test_mldsa.py        # 18 ML-DSA tests
@@ -425,25 +435,43 @@ bool valid = slh_verify(SLH_DSA_SHAKE_128f, message, sig, pk);
 
 This is a **reference implementation** for educational purposes.
 
-**Side-Channel Status**:
-- **SLH-DSA (C++)**: Constant-time mitigations applied (v1.1) - see details below
-- **ML-DSA (C++)**: No side-channel protections
-- **Python implementations**: No side-channel protections
+### Side-Channel Protection Status
 
-The SLH-DSA C++ implementation includes constant-time mitigations for:
-- WOTS+ chain function (fixed iterations)
-- XMSS/FORS tree traversal (branchless concatenation)
-- Signature verification (constant-time comparison)
+| Implementation | Side-Channel Status | Notes |
+|----------------|---------------------|-------|
+| SLH-DSA (C++) | **Mitigated** | Constant-time operations implemented |
+| ML-DSA (C++) | Unprotected | Reference implementation only |
+| SLH-DSA (Python) | Unprotected | Reference implementation only |
+| ML-DSA (Python) | Unprotected | Reference implementation only |
 
-See [Security Assessment](docs/SECURITY_ASSESSMENT.md) for detailed analysis.
+### SLH-DSA C++ Constant-Time Features
+
+The C++ SLH-DSA implementation includes protections against timing side-channel attacks:
+
+| Component | Vulnerability | Mitigation |
+|-----------|--------------|------------|
+| WOTS+ Chain | Variable loop iterations leaked chain length | Fixed `w` iterations with conditional selection |
+| XMSS Tree | Branch-based concatenation leaked tree path | Branchless `ct_concat_conditional()` |
+| FORS Tree | Branch-based concatenation leaked indices | Branchless `ct_concat_conditional()` |
+| Verification | Early-exit comparison enabled timing oracle | Constant-time `ct_equal()` comparison |
+
+**Constant-Time Utilities** (`ct_utils.hpp`):
+- `ct_select_bytes()` - Branchless byte array selection
+- `ct_concat_conditional()` - Branchless concatenation ordering
+- `ct_equal()` - Constant-time byte comparison
+- `ct_barrier()` - Compiler memory barrier
+
+See [Security Assessment](docs/SECURITY_ASSESSMENT.md) for detailed vulnerability analysis and mitigation documentation.
+
+### Production Recommendations
 
 For production use:
 
 - Use NIST-certified cryptographic libraries with formal verification
 - Consider [liboqs](https://github.com/open-quantum-safe/liboqs) or vendor implementations
+- Verify constant-time properties with tools like [dudect](https://github.com/oreparaz/dudect) or ctgrind
 - Store secret keys in Hardware Security Modules (HSMs)
 - Follow your organization's key management policies
-- Keep keys separate from signed data
 
 ---
 
