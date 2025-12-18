@@ -13,6 +13,7 @@
 #include "address.hpp"
 #include "hash_functions.hpp"
 #include "xmss.hpp"
+#include "ct_utils.hpp"
 #include <vector>
 #include <span>
 #include <cstdint>
@@ -140,11 +141,9 @@ inline bool ht_verify(
         node = xmss_pkFromSig(hash_funcs, idx_leaf, sig_xmss, node, pk_seed, adrs);
     }
 
-    // Verify computed root matches public key
-    if (node.size() != pk_root.size()) {
-        return false;
-    }
-    return std::equal(node.begin(), node.end(), pk_root.begin());
+    // Verify computed root matches public key - CONSTANT TIME
+    ct::ct_barrier();
+    return ct::ct_equal(node, pk_root);
 }
 
 } // namespace slhdsa

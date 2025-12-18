@@ -3,6 +3,9 @@
  * FIPS 205 Section 6
  *
  * XMSS extends WOTS+ to allow multiple signatures using a Merkle tree.
+ *
+ * SECURITY: This implementation uses constant-time operations for tree
+ * traversal to resist timing-based side-channel attacks.
  */
 
 #ifndef SLHDSA_XMSS_HPP
@@ -12,6 +15,7 @@
 #include "address.hpp"
 #include "hash_functions.hpp"
 #include "wots.hpp"
+#include "ct_utils.hpp"
 #include <vector>
 #include <span>
 #include <cstdint>
@@ -112,9 +116,12 @@ inline std::vector<uint8_t> xmss_sign(
 }
 
 /**
- * Algorithm 10: xmss_pkFromSig(idx, SIG_XMSS, M, PK.seed, ADRS)
+ * Algorithm 10: xmss_pkFromSig(idx, SIG_XMSS, M, PK.seed, ADRS) - CONSTANT TIME VERSION
  *
  * Compute XMSS public key (root) from signature.
+ *
+ * SECURITY: Uses constant-time conditional concatenation to avoid
+ * leaking the tree path through branching.
  *
  * @param hash_funcs Hash function instantiation
  * @param idx Leaf index used in signature
@@ -147,31 +154,27 @@ inline std::vector<uint8_t> xmss_pkFromSig(
     adrs.set_key_pair_address(idx);
     auto node = wots_pkFromSig(hash_funcs, sig_wots, M, pk_seed, adrs);
 
-    // Compute root using authentication path
+    // Compute root using authentication path - CONSTANT TIME
     adrs.set_type(AddressType::TREE);
     for (size_t j = 0; j < hp; ++j) {
         adrs.set_tree_height(static_cast<uint32_t>(j + 1));
+        adrs.set_tree_index(idx >> (j + 1));
+
         std::span<const uint8_t> auth_node = auth.subspan(j * n, n);
 
-        if (((idx >> j) & 1) == 0) {
-            // Node is left child
-            adrs.set_tree_index(idx >> (j + 1));
-            std::vector<uint8_t> concat;
-            concat.reserve(node.size() + auth_node.size());
-            concat.insert(concat.end(), node.begin(), node.end());
-            concat.insert(concat.end(), auth_node.begin(), auth_node.end());
-            node = hash_funcs.H(pk_seed, adrs, concat);
-        } else {
-            // Node is right child
-            adrs.set_tree_index(idx >> (j + 1));
-            std::vector<uint8_t> concat;
-            concat.reserve(auth_node.size() + node.size());
-            concat.insert(concat.end(), auth_node.begin(), auth_node.end());
-            concat.insert(concat.end(), node.begin(), node.end());
-            node = hash_funcs.H(pk_seed, adrs, concat);
-        }
+        // Determine if node is left child (bit is 0) or right child (bit is 1)
+        // Use constant-time conditional concatenation
+        bool is_left_child = ((idx >> j) & 1) == 0;
+
+        // Constant-time: compute both orderings and select
+        // If is_left_child: concat = node || auth_node
+        // If !is_left_child: concat = auth_node || node
+        auto concat = ct::ct_concat_conditional(node, auth_node, is_left_child);
+
+        node = hash_funcs.H(pk_seed, adrs, concat);
     }
 
+    ct::ct_barrier();
     return node;
 }
 

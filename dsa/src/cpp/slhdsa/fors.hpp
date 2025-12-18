@@ -3,6 +3,9 @@
  * FIPS 205 Section 8
  *
  * FORS is a few-time signature scheme used to sign the message digest in SLH-DSA.
+ *
+ * SECURITY: This implementation uses constant-time operations for tree
+ * traversal to resist timing-based side-channel attacks.
  */
 
 #ifndef SLHDSA_FORS_HPP
@@ -12,6 +15,7 @@
 #include "address.hpp"
 #include "hash_functions.hpp"
 #include "utils.hpp"
+#include "ct_utils.hpp"
 #include <vector>
 #include <span>
 #include <cstdint>
@@ -150,9 +154,12 @@ inline std::vector<uint8_t> fors_sign(
 }
 
 /**
- * Algorithm 16: fors_pkFromSig(SIG_FORS, md, PK.seed, ADRS)
+ * Algorithm 16: fors_pkFromSig(SIG_FORS, md, PK.seed, ADRS) - CONSTANT TIME VERSION
  *
  * Compute FORS public key from signature.
+ *
+ * SECURITY: Uses constant-time conditional concatenation to avoid
+ * leaking the tree path through branching.
  *
  * @param hash_funcs Hash function instantiation
  * @param sig_fors FORS signature
@@ -198,7 +205,7 @@ inline std::vector<uint8_t> fors_pkFromSig(
         adrs.set_tree_index(global_leaf_idx);
         auto node = hash_funcs.F(pk_seed, adrs, sk);
 
-        // Compute root using authentication path
+        // Compute root using authentication path - CONSTANT TIME
         for (size_t j = 0; j < a; ++j) {
             adrs.set_tree_height(static_cast<uint32_t>(j + 1));
             std::span<const uint8_t> auth_node = auth.subspan(j * n, n);
@@ -209,19 +216,14 @@ inline std::vector<uint8_t> fors_pkFromSig(
             uint32_t global_parent_idx = static_cast<uint32_t>(i * (1u << (a - j - 1))) + parent_local_idx;
             adrs.set_tree_index(global_parent_idx);
 
-            // Concatenate in correct order based on whether node is left or right child
-            std::vector<uint8_t> concat;
-            concat.reserve(node.size() + auth_node.size());
+            // Determine if node is left child (bit is 0) or right child (bit is 1)
+            // Use constant-time conditional concatenation
+            bool is_left_child = ((idx >> j) & 1) == 0;
 
-            if (((idx >> j) & 1) == 0) {
-                // Node is left child
-                concat.insert(concat.end(), node.begin(), node.end());
-                concat.insert(concat.end(), auth_node.begin(), auth_node.end());
-            } else {
-                // Node is right child
-                concat.insert(concat.end(), auth_node.begin(), auth_node.end());
-                concat.insert(concat.end(), node.begin(), node.end());
-            }
+            // Constant-time: compute both orderings and select
+            // If is_left_child: concat = node || auth_node
+            // If !is_left_child: concat = auth_node || node
+            auto concat = ct::ct_concat_conditional(node, auth_node, is_left_child);
 
             node = hash_funcs.H(pk_seed, adrs, concat);
         }
@@ -234,6 +236,7 @@ inline std::vector<uint8_t> fors_pkFromSig(
     pk_adrs.set_type(AddressType::FORS_ROOTS);
     pk_adrs.set_key_pair_address(adrs.get_key_pair_address());
 
+    ct::ct_barrier();
     return hash_funcs.T_l(pk_seed, pk_adrs, roots);
 }
 

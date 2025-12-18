@@ -423,9 +423,24 @@ bool valid = slh_verify(SLH_DSA_SHAKE_128f, message, sig, pk);
 
 ## Security Notice
 
-This is a **reference implementation** for educational purposes. For production use:
+This is a **reference implementation** for educational purposes.
 
-- Use NIST-certified cryptographic libraries
+**Side-Channel Status**:
+- **SLH-DSA (C++)**: Constant-time mitigations applied (v1.1) - see details below
+- **ML-DSA (C++)**: No side-channel protections
+- **Python implementations**: No side-channel protections
+
+The SLH-DSA C++ implementation includes constant-time mitigations for:
+- WOTS+ chain function (fixed iterations)
+- XMSS/FORS tree traversal (branchless concatenation)
+- Signature verification (constant-time comparison)
+
+See [Security Assessment](docs/SECURITY_ASSESSMENT.md) for detailed analysis.
+
+For production use:
+
+- Use NIST-certified cryptographic libraries with formal verification
+- Consider [liboqs](https://github.com/open-quantum-safe/liboqs) or vendor implementations
 - Store secret keys in Hardware Security Modules (HSMs)
 - Follow your organization's key management policies
 - Keep keys separate from signed data
@@ -434,6 +449,8 @@ This is a **reference implementation** for educational purposes. For production 
 
 ## Documentation
 
+- **[Security Assessment](docs/SECURITY_ASSESSMENT.md)** - Side-channel attack analysis and vulnerability assessment
+- **[KAT Tests](docs/KAT_TESTS.md)** - NIST Known Answer Test documentation and compliance status
 - **[Certificate Guide](docs/CERTIFICATE_GUIDE.md)** - Comprehensive guide on creating post-quantum certificates with ML-DSA and SLH-DSA, including:
   - Algorithm selection guidance
   - Certificate creation examples (Python & C++)
