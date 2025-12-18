@@ -18,6 +18,7 @@ WORKDIR /app
 # Copy source code
 COPY src/cpp/ ./src/cpp/
 COPY tests/cpp/ ./tests/cpp/
+COPY examples/cpp/ ./examples/cpp/
 
 # Create build directory and build
 RUN mkdir -p build && cd build && \

@@ -108,13 +108,13 @@ shell: build-py
 
 # Demo targets
 demo-api: build-py
-	docker run --rm $(IMAGE_NAME_PY) python examples/api_authentication.py
+	docker run --rm $(IMAGE_NAME_PY) python examples/py/api_authentication.py
 
 demo-document: build-py
-	docker run --rm $(IMAGE_NAME_PY) python examples/document_signing.py
+	docker run --rm $(IMAGE_NAME_PY) python examples/py/document_signing.py
 
 demo-compare: build-py
-	docker run --rm $(IMAGE_NAME_PY) python examples/comparison.py
+	docker run --rm $(IMAGE_NAME_PY) python examples/py/comparison.py
 
 demo-cpp: build-cpp
 	docker run --rm $(IMAGE_NAME_CPP) ./build/mldsa_demo

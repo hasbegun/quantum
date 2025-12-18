@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY src/py/ ./src/py/
 COPY tests/py/ ./tests/py/
-COPY examples/ ./examples/
+COPY examples/py/ ./examples/py/
 COPY pyproject.toml .
 COPY README.md .
 

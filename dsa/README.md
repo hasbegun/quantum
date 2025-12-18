@@ -186,27 +186,79 @@ Create and verify post-quantum certificates for TLS, code signing, and more.
 
 **ML-DSA Certificate Example:**
 ```bash
+# Build and run ML-DSA certificate demo
 make cert-mldsa
 ```
 
-Demonstrates:
-- Root CA creation with ML-DSA-65
+This demonstrates a complete PKI workflow:
+- Root CA creation with ML-DSA-65 (Category 3 security)
 - Intermediate CA certificates
-- TLS server certificates with ML-DSA-44
+- TLS server certificates with ML-DSA-44 (Category 1, faster)
 - Certificate chain verification
-- TLS handshake signing
+- TLS handshake signing simulation
+
+Expected output:
+```
+============================================================
+  ML-DSA Certificate Example (FIPS 204)
+============================================================
+
+1. Creating Root CA with ML-DSA-65...
+   CA created in 45 ms
+
+   Root CA Certificate:
+   Subject: Example Root CA
+   Algorithm: ML-DSA-65
+   Public Key Size: 1952 bytes
+   Signature Size: 3309 bytes
+   ...
+```
 
 **SLH-DSA Certificate Example:**
 ```bash
+# Build and run SLH-DSA certificate demo
 make cert-slhdsa
 ```
 
-Demonstrates:
-- Root CA creation with SLH-DSA (30-year validity)
+This demonstrates hash-based certificates for long-term security:
+- Root CA creation with SLH-DSA-SHAKE-128f (30-year validity)
 - Code signing certificates
 - Document signing certificates
 - Firmware signing and verification
 - Tamper detection
+
+Expected output:
+```
+============================================================
+  SLH-DSA Certificate Example (FIPS 205)
+============================================================
+
+Note: SLH-DSA provides security based only on hash functions.
+This is ideal for long-term certificates (Root CAs, code signing).
+
+1. Creating Root CA with SLH-DSA-SHAKE-128f...
+   Generating key pair... done (12 ms)
+   Signing certificate... done (85 ms)
+
+   Root CA Certificate:
+   Subject: Global Root CA
+   Algorithm: SLH-DSA-SHAKE-128f
+   Public Key Size: 32 bytes
+   Signature Size: 17088 bytes
+   ...
+```
+
+**Running without Make:**
+```bash
+# Build C++ Docker image
+docker build -t dsa-cpp -f Dockerfile.cpp .
+
+# Run ML-DSA certificate example
+docker run --rm dsa-cpp ./build/mldsa_cert_example
+
+# Run SLH-DSA certificate example
+docker run --rm dsa-cpp ./build/slhdsa_cert_example
+```
 
 See [Certificate Guide](docs/CERTIFICATE_GUIDE.md) for complete documentation.
 
@@ -287,7 +339,6 @@ dsa/
 │   │   │   ├── mldsa.py         # Main MLDSA class
 │   │   │   ├── params.py        # Parameter sets (44, 65, 87)
 │   │   │   ├── ntt.py           # Number Theoretic Transform
-│   │   │   ├── poly.py          # Polynomial operations
 │   │   │   ├── encoding.py      # Bit packing/unpacking
 │   │   │   └── sampling.py      # Rejection sampling
 │   │   └── slhdsa/              # SLH-DSA implementation
@@ -325,9 +376,13 @@ dsa/
 │       ├── test_mldsa.cpp       # ML-DSA test suite
 │       └── test_slhdsa.cpp      # SLH-DSA test suite
 ├── examples/
-│   ├── api_authentication.py
-│   ├── document_signing.py
-│   └── comparison.py
+│   ├── py/                      # Python examples
+│   │   ├── api_authentication.py
+│   │   ├── document_signing.py
+│   │   └── comparison.py
+│   └── cpp/                     # C++ examples
+│       ├── mldsa_certificate.cpp
+│       └── slhdsa_certificate.cpp
 ├── Dockerfile                   # Python Docker image
 ├── Dockerfile.cpp               # C++ Docker image
 ├── Makefile

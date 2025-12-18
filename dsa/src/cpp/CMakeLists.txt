@@ -85,20 +85,28 @@ target_link_libraries(mldsa_demo PRIVATE
 
 # ML-DSA Certificate Example
 add_executable(mldsa_cert_example
-    examples/mldsa_certificate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/cpp/mldsa_certificate.cpp
 )
 
 target_link_libraries(mldsa_cert_example PRIVATE
     mldsa
 )
 
+target_include_directories(mldsa_cert_example PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 # SLH-DSA Certificate Example
 add_executable(slhdsa_cert_example
-    examples/slhdsa_certificate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/cpp/slhdsa_certificate.cpp
 )
 
 target_link_libraries(slhdsa_cert_example PRIVATE
     slhdsa
+)
+
+target_include_directories(slhdsa_cert_example PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Install targets
