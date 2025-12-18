@@ -346,6 +346,23 @@ public:
     }
 
     /**
+     * Generate a key pair from seeds (for KAT testing).
+     * @param sk_seed Secret seed (n bytes)
+     * @param sk_prf PRF key (n bytes)
+     * @param pk_seed Public seed (n bytes)
+     * @return Tuple of (secret_key, public_key)
+     */
+    [[nodiscard]] std::tuple<std::vector<uint8_t>, std::vector<uint8_t>> keygen(
+        std::span<const uint8_t> sk_seed,
+        std::span<const uint8_t> sk_prf,
+        std::span<const uint8_t> pk_seed) const {
+        if (sk_seed.size() != P.n || sk_prf.size() != P.n || pk_seed.size() != P.n) {
+            throw std::invalid_argument("All seeds must be n bytes");
+        }
+        return slh_keygen_internal(P, sk_seed, sk_prf, pk_seed);
+    }
+
+    /**
      * Sign a message.
      */
     [[nodiscard]] std::vector<uint8_t> sign(

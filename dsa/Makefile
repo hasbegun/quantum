@@ -1,6 +1,8 @@
 .PHONY: build build-py build-cpp test test-py test-cpp \
         test-mldsa test-slhdsa test-mldsa-cpp test-slhdsa-cpp \
-        dev shell demo-api demo-document demo-compare demo-cpp clean help
+        test-kat test-kat-mldsa test-kat-slhdsa \
+        dev shell demo-api demo-document demo-compare demo-cpp \
+        cert-mldsa cert-slhdsa clean help
 
 # Docker image names
 IMAGE_NAME_PY := dsa-py
@@ -25,11 +27,20 @@ help:
 	@echo "  make test-mldsa-cpp   - Run ML-DSA C++ tests only"
 	@echo "  make test-slhdsa-cpp  - Run SLH-DSA C++ tests only"
 	@echo ""
+	@echo "NIST KAT Tests (C++):"
+	@echo "  make test-kat         - Run all NIST KAT tests"
+	@echo "  make test-kat-mldsa   - Run ML-DSA NIST KAT tests"
+	@echo "  make test-kat-slhdsa  - Run SLH-DSA NIST KAT tests"
+	@echo ""
 	@echo "Examples:"
 	@echo "  make demo-api     - API authentication (ML-DSA Python)"
 	@echo "  make demo-document- Document signing (SLH-DSA Python)"
 	@echo "  make demo-compare - Compare ML-DSA vs SLH-DSA (Python)"
-	@echo "  make demo-cpp     - Run C++ ML-DSA demo"
+	@echo "  make demo-cpp     - Run C++ ML-DSA + SLH-DSA demo"
+	@echo ""
+	@echo "Certificate Examples (C++):"
+	@echo "  make cert-mldsa   - ML-DSA certificate example"
+	@echo "  make cert-slhdsa  - SLH-DSA certificate example"
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev          - Run Python tests with mounted source"
@@ -67,6 +78,15 @@ test-mldsa-cpp: build-cpp
 test-slhdsa-cpp: build-cpp
 	docker run --rm $(IMAGE_NAME_CPP) ./build/test_slhdsa
 
+# NIST KAT Tests (FIPS 204 & 205 compliance)
+test-kat: test-kat-mldsa test-kat-slhdsa
+
+test-kat-mldsa: build-cpp
+	docker run --rm $(IMAGE_NAME_CPP) ./build/test_mldsa_kat
+
+test-kat-slhdsa: build-cpp
+	docker run --rm $(IMAGE_NAME_CPP) ./build/test_slhdsa_kat
+
 # Development
 dev:
 	@docker rm -f $(CONTAINER_NAME) 2>/dev/null || true
@@ -98,6 +118,13 @@ demo-compare: build-py
 
 demo-cpp: build-cpp
 	docker run --rm $(IMAGE_NAME_CPP) ./build/mldsa_demo
+
+# Certificate example targets (C++)
+cert-mldsa: build-cpp
+	docker run --rm $(IMAGE_NAME_CPP) ./build/mldsa_cert_example
+
+cert-slhdsa: build-cpp
+	docker run --rm $(IMAGE_NAME_CPP) ./build/slhdsa_cert_example
 
 # Cleanup
 clean:

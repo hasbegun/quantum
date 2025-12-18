@@ -133,11 +133,19 @@ private:
     /**
      * Algorithm 6: ML-DSA.KeyGen_internal
      * Internal key generation algorithm
+     *
+     * Note: FIPS 204 final version uses domain separation by appending
+     * k and l parameters to the seed before hashing: H(ξ || k || l)
      */
     [[nodiscard]] std::pair<std::vector<uint8_t>, std::vector<uint8_t>>
     keygen_internal(std::span<const uint8_t> xi) const {
-        // Step 1: Expand seed to (rho, rho', K)
-        auto expanded = h_function(xi, 128);
+        // Step 1: Expand seed to (rho, rho', K) with domain separation
+        // FIPS 204: H(ξ || k || l, 1024) where k and l are single bytes
+        std::vector<uint8_t> seed_with_params(xi.begin(), xi.end());
+        seed_with_params.push_back(static_cast<uint8_t>(params_.k));
+        seed_with_params.push_back(static_cast<uint8_t>(params_.l));
+
+        auto expanded = h_function(seed_with_params, 128);
         std::vector<uint8_t> rho(expanded.begin(), expanded.begin() + 32);
         std::vector<uint8_t> rho_prime(expanded.begin() + 32, expanded.begin() + 96);
         std::vector<uint8_t> K(expanded.begin() + 96, expanded.begin() + 128);

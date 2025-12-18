@@ -296,18 +296,16 @@ std::vector<uint8_t> SHA2HashFunctions::PRF(
 
     auto compressed = adrs.get_compressed_adrs();
 
+    // PRF always uses SHA-256 with padding: pk_seed || zeros(64-n) || ADRSc || sk_seed
     std::vector<uint8_t> data;
-    data.reserve(pk_seed.size() + 22 + sk_seed.size());
+    size_t padding_len = 64 - n_;
+    data.reserve(pk_seed.size() + padding_len + 22 + sk_seed.size());
     data.insert(data.end(), pk_seed.begin(), pk_seed.end());
+    data.resize(data.size() + padding_len, 0);  // Add padding
     data.insert(data.end(), compressed.begin(), compressed.end());
     data.insert(data.end(), sk_seed.begin(), sk_seed.end());
 
-    // Pad to block size
-    if (data.size() < block_size_) {
-        data.resize(block_size_, 0);
-    }
-
-    auto result = hash(data);
+    auto result = sha256(data);
     result.resize(n_);
     return result;
 }
@@ -319,18 +317,16 @@ std::vector<uint8_t> SHA2HashFunctions::F(
 
     auto compressed = adrs.get_compressed_adrs();
 
+    // F always uses SHA-256 with padding: pk_seed || zeros(64-n) || ADRSc || M1
     std::vector<uint8_t> data;
-    data.reserve(pk_seed.size() + 22 + M1.size());
+    size_t padding_len = 64 - n_;
+    data.reserve(pk_seed.size() + padding_len + 22 + M1.size());
     data.insert(data.end(), pk_seed.begin(), pk_seed.end());
+    data.resize(data.size() + padding_len, 0);  // Add padding
     data.insert(data.end(), compressed.begin(), compressed.end());
     data.insert(data.end(), M1.begin(), M1.end());
 
-    // Pad to block size
-    if (data.size() < block_size_) {
-        data.resize(block_size_, 0);
-    }
-
-    auto result = hash(data);
+    auto result = sha256(data);
     result.resize(n_);
     return result;
 }
@@ -342,9 +338,13 @@ std::vector<uint8_t> SHA2HashFunctions::H(
 
     auto compressed = adrs.get_compressed_adrs();
 
+    // H uses SHA-256 for n=16, SHA-512 for n=24/32
+    // Padding: pk_seed || zeros(block_size-n) || ADRSc || M2
     std::vector<uint8_t> data;
-    data.reserve(pk_seed.size() + 22 + M2.size());
+    size_t padding_len = block_size_ - n_;
+    data.reserve(pk_seed.size() + padding_len + 22 + M2.size());
     data.insert(data.end(), pk_seed.begin(), pk_seed.end());
+    data.resize(data.size() + padding_len, 0);  // Add padding
     data.insert(data.end(), compressed.begin(), compressed.end());
     data.insert(data.end(), M2.begin(), M2.end());
 
@@ -360,9 +360,13 @@ std::vector<uint8_t> SHA2HashFunctions::T_l(
 
     auto compressed = adrs.get_compressed_adrs();
 
+    // T_l uses SHA-256 for n=16, SHA-512 for n=24/32
+    // Padding: pk_seed || zeros(block_size-n) || ADRSc || M_l
     std::vector<uint8_t> data;
-    data.reserve(pk_seed.size() + 22 + M_l.size());
+    size_t padding_len = block_size_ - n_;
+    data.reserve(pk_seed.size() + padding_len + 22 + M_l.size());
     data.insert(data.end(), pk_seed.begin(), pk_seed.end());
+    data.resize(data.size() + padding_len, 0);  // Add padding
     data.insert(data.end(), compressed.begin(), compressed.end());
     data.insert(data.end(), M_l.begin(), M_l.end());
 

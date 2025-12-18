@@ -32,14 +32,13 @@ enum class AddressType : uint32_t {
 /**
  * ADRS - 32-byte address structure for domain separation
  *
- * Layout (all fields are big-endian):
- * Bytes 0-3:   Layer address
- * Bytes 4-11:  Tree address (64 bits)
- * Bytes 12-15: Type (determines remaining field meanings)
- * Bytes 16-19: Key pair address (for WOTS/FORS types)
- * Bytes 20-23: Chain address / Tree height
- * Bytes 24-27: Hash address / Tree index
- * Bytes 28-31: Reserved/unused
+ * Layout per FIPS 205 Section 4.2 Table 1 (all fields are big-endian):
+ * Bytes 0-3:   Layer address (4 bytes)
+ * Bytes 4-15:  Tree address (12 bytes)
+ * Bytes 16-19: Type (4 bytes)
+ * Bytes 20-23: Key pair address / unused (4 bytes)
+ * Bytes 24-27: Chain address / Tree height (4 bytes)
+ * Bytes 28-31: Hash address / Tree index (4 bytes)
  */
 class ADRS {
 public:
@@ -81,90 +80,93 @@ public:
         return get_u32(0);
     }
 
-    // Tree address (bytes 4-11, 64 bits)
+    // Tree address (bytes 4-15, 96 bits stored in 12 bytes)
+    // FIPS 205: tree address is 12 bytes, but we only use lower 64 bits
     void set_tree_address(uint64_t tree) noexcept {
-        set_u64(4, tree);
+        // Clear upper 4 bytes (4-7) and set lower 8 bytes (8-15)
+        set_u32(4, 0);  // Upper 32 bits always 0
+        set_u64(8, tree);  // Lower 64 bits of tree address
     }
 
     [[nodiscard]] uint64_t get_tree_address() const noexcept {
-        return get_u64(4);
+        return get_u64(8);
     }
 
-    // Type (bytes 12-15)
+    // Type (bytes 16-19)
     void set_type(AddressType type) noexcept {
-        set_u32(12, static_cast<uint32_t>(type));
-        // When type changes, clear type-specific fields (bytes 16-31)
-        std::memset(&data_[16], 0, 16);
+        set_u32(16, static_cast<uint32_t>(type));
+        // When type changes, clear type-specific fields (bytes 20-31)
+        std::memset(&data_[20], 0, 12);
     }
 
     [[nodiscard]] AddressType get_type() const noexcept {
-        return static_cast<AddressType>(get_u32(12));
+        return static_cast<AddressType>(get_u32(16));
     }
 
-    // Key pair address (bytes 16-19) - for WOTS and FORS types
+    // Key pair address (bytes 20-23) - for WOTS and FORS types
     void set_key_pair_address(uint32_t kp) noexcept {
-        set_u32(16, kp);
+        set_u32(20, kp);
     }
 
     [[nodiscard]] uint32_t get_key_pair_address() const noexcept {
-        return get_u32(16);
+        return get_u32(20);
     }
 
-    // Chain address (bytes 20-23) - for WOTS types
+    // Chain address (bytes 24-27) - for WOTS types
     void set_chain_address(uint32_t chain) noexcept {
-        set_u32(20, chain);
+        set_u32(24, chain);
     }
 
     [[nodiscard]] uint32_t get_chain_address() const noexcept {
-        return get_u32(20);
+        return get_u32(24);
     }
 
-    // Hash address (bytes 24-27) - for WOTS_HASH
+    // Hash address (bytes 28-31) - for WOTS_HASH
     void set_hash_address(uint32_t hash) noexcept {
-        set_u32(24, hash);
+        set_u32(28, hash);
     }
 
     [[nodiscard]] uint32_t get_hash_address() const noexcept {
-        return get_u32(24);
+        return get_u32(28);
     }
 
-    // Tree height (bytes 20-23) - for TREE and FORS_TREE types
+    // Tree height (bytes 24-27) - for TREE and FORS_TREE types
     void set_tree_height(uint32_t height) noexcept {
-        set_u32(20, height);
+        set_u32(24, height);
     }
 
     [[nodiscard]] uint32_t get_tree_height() const noexcept {
-        return get_u32(20);
+        return get_u32(24);
     }
 
-    // Tree index (bytes 24-27) - for TREE and FORS types
+    // Tree index (bytes 28-31) - for TREE and FORS types
     void set_tree_index(uint32_t index) noexcept {
-        set_u32(24, index);
+        set_u32(28, index);
     }
 
     [[nodiscard]] uint32_t get_tree_index() const noexcept {
-        return get_u32(24);
+        return get_u32(28);
     }
 
     /**
      * Get 22-byte compressed address for SHA2 variants.
      *
      * Layout (FIPS 205 Section 11.2.1):
-     *   Bytes 0-2:   Offset 1-3 (layer address, 3 LSB)
-     *   Bytes 3-10:  Offset 4-11 (tree address)
-     *   Bytes 11:    Offset 15 (type, LSB)
-     *   Bytes 12-21: Offset 16-25 (type-specific fields)
+     *   Byte 0:      Layer address LSB (ADRS[3])
+     *   Bytes 1-8:   Tree address lower 8 bytes (ADRS[8:16])
+     *   Byte 9:      Type LSB (ADRS[19])
+     *   Bytes 10-21: Type-specific fields (ADRS[20:32])
      */
     [[nodiscard]] std::array<uint8_t, 22> get_compressed_adrs() const noexcept {
         std::array<uint8_t, 22> compressed{};
-        // Layer address (3 bytes from offset 1-3)
-        std::memcpy(&compressed[0], &data_[1], 3);
-        // Tree address (8 bytes from offset 4-11)
-        std::memcpy(&compressed[3], &data_[4], 8);
-        // Type (1 byte from offset 15)
-        compressed[11] = data_[15];
-        // Type-specific (10 bytes from offset 16-25)
-        std::memcpy(&compressed[12], &data_[16], 10);
+        // Layer address LSB (1 byte from offset 3)
+        compressed[0] = data_[3];
+        // Tree address (8 bytes from offset 8-15)
+        std::memcpy(&compressed[1], &data_[8], 8);
+        // Type LSB (1 byte from offset 19)
+        compressed[9] = data_[19];
+        // Type-specific fields (12 bytes from offset 20-31)
+        std::memcpy(&compressed[10], &data_[20], 12);
         return compressed;
     }
 

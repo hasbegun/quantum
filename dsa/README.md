@@ -171,6 +171,36 @@ int main() {
 }
 ```
 
+### Example 4: Certificate Creation (C++)
+
+Create and verify post-quantum certificates for TLS, code signing, and more.
+
+**ML-DSA Certificate Example:**
+```bash
+make cert-mldsa
+```
+
+Demonstrates:
+- Root CA creation with ML-DSA-65
+- Intermediate CA certificates
+- TLS server certificates with ML-DSA-44
+- Certificate chain verification
+- TLS handshake signing
+
+**SLH-DSA Certificate Example:**
+```bash
+make cert-slhdsa
+```
+
+Demonstrates:
+- Root CA creation with SLH-DSA (30-year validity)
+- Code signing certificates
+- Document signing certificates
+- Firmware signing and verification
+- Tamper detection
+
+See [Certificate Guide](docs/CERTIFICATE_GUIDE.md) for complete documentation.
+
 ### When to Use Each Algorithm
 
 | Scenario | Recommended | Reason |
@@ -376,12 +406,17 @@ bool valid = slh_verify(SLH_DSA_SHAKE_128f, message, sig, pk);
 | `make test-slhdsa` | Run SLH-DSA Python tests |
 | `make test-mldsa-cpp` | Run ML-DSA C++ tests |
 | `make test-slhdsa-cpp` | Run SLH-DSA C++ tests |
+| `make test-kat` | Run NIST KAT tests (C++) |
+| `make test-kat-mldsa` | Run ML-DSA NIST KAT tests |
+| `make test-kat-slhdsa` | Run SLH-DSA NIST KAT tests |
 | `make dev` | Run tests with mounted source |
 | `make shell` | Interactive Python shell |
 | `make demo-api` | API authentication example |
 | `make demo-document` | Document signing example |
 | `make demo-compare` | Algorithm comparison |
-| `make demo-cpp` | C++ ML-DSA demo |
+| `make demo-cpp` | C++ ML-DSA + SLH-DSA demo |
+| `make cert-mldsa` | ML-DSA certificate example (C++) |
+| `make cert-slhdsa` | SLH-DSA certificate example (C++) |
 | `make clean` | Remove Docker resources |
 
 ---

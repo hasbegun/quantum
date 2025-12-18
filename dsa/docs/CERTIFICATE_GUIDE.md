@@ -23,7 +23,7 @@ Traditional Certificate:
 ┌─────────────────────────────────────┐
 │ Subject: example.com                │
 │ Public Key: RSA-2048 or ECDSA-P256  │  ← Broken by quantum computers
-│ Signature: RSA/ECDSA               │
+│ Signature: RSA/ECDSA                │
 └─────────────────────────────────────┘
 
 Post-Quantum Certificate:

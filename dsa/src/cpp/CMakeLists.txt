@@ -83,6 +83,24 @@ target_link_libraries(mldsa_demo PRIVATE
     slhdsa
 )
 
+# ML-DSA Certificate Example
+add_executable(mldsa_cert_example
+    examples/mldsa_certificate.cpp
+)
+
+target_link_libraries(mldsa_cert_example PRIVATE
+    mldsa
+)
+
+# SLH-DSA Certificate Example
+add_executable(slhdsa_cert_example
+    examples/slhdsa_certificate.cpp
+)
+
+target_link_libraries(slhdsa_cert_example PRIVATE
+    slhdsa
+)
+
 # Install targets
 install(TARGETS mldsa slhdsa
     ARCHIVE DESTINATION lib
@@ -98,7 +116,35 @@ install(DIRECTORY slhdsa/
     FILES_MATCHING PATTERN "*.hpp"
 )
 
+# ML-DSA KAT Test executable
+add_executable(test_mldsa_kat
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/cpp/test_mldsa_kat.cpp
+)
+
+target_link_libraries(test_mldsa_kat PRIVATE
+    mldsa
+)
+
+target_include_directories(test_mldsa_kat PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# SLH-DSA KAT Test executable
+add_executable(test_slhdsa_kat
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/cpp/test_slhdsa_kat.cpp
+)
+
+target_link_libraries(test_slhdsa_kat PRIVATE
+    slhdsa
+)
+
+target_include_directories(test_slhdsa_kat PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 # CTest support
 enable_testing()
 add_test(NAME mldsa_tests COMMAND test_mldsa)
 add_test(NAME slhdsa_tests COMMAND test_slhdsa)
+add_test(NAME mldsa_kat_tests COMMAND test_mldsa_kat)
+add_test(NAME slhdsa_kat_tests COMMAND test_slhdsa_kat)
