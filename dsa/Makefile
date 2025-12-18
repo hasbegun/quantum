@@ -42,6 +42,13 @@ help:
 	@echo "  make cert-mldsa   - ML-DSA certificate example"
 	@echo "  make cert-slhdsa  - SLH-DSA certificate example"
 	@echo ""
+	@echo "Key Generation (saves to ./keys/):"
+	@echo "  make keygen-mldsa44     - Generate ML-DSA-44 key pair"
+	@echo "  make keygen-mldsa65     - Generate ML-DSA-65 key pair"
+	@echo "  make keygen-mldsa87     - Generate ML-DSA-87 key pair"
+	@echo "  make keygen-slhdsa      - Generate SLH-DSA-SHAKE-128f key pair"
+	@echo "  make keygen-slhdsa-small- Generate SLH-DSA-SHAKE-128s key pair"
+	@echo ""
 	@echo "Development:"
 	@echo "  make dev          - Run Python tests with mounted source"
 	@echo "  make shell        - Interactive Python shell"
@@ -105,6 +112,31 @@ shell: build-py
 		-v $(PWD)/tests:/app/tests \
 		$(IMAGE_NAME_PY) \
 		python
+
+# Key generation targets (with mounted volume)
+keygen: build-py
+	@echo "Usage: make keygen-mldsa44, keygen-mldsa65, keygen-slhdsa, etc."
+	@echo "Keys will be saved to ./keys/ directory"
+
+keygen-mldsa44: build-py
+	@mkdir -p keys
+	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py mldsa44 /keys
+
+keygen-mldsa65: build-py
+	@mkdir -p keys
+	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py mldsa65 /keys
+
+keygen-mldsa87: build-py
+	@mkdir -p keys
+	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py mldsa87 /keys
+
+keygen-slhdsa: build-py
+	@mkdir -p keys
+	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py slh-shake-128f /keys
+
+keygen-slhdsa-small: build-py
+	@mkdir -p keys
+	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py slh-shake-128s /keys
 
 # Demo targets
 demo-api: build-py
