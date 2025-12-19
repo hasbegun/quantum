@@ -262,6 +262,80 @@ docker run --rm dsa-cpp ./build/slhdsa_cert_example
 
 See [Certificate Guide](docs/CERTIFICATE_GUIDE.md) for complete documentation.
 
+### Example 5: Key Generation
+
+Generate post-quantum key pairs and save them to local files.
+
+**Quick Start:**
+```bash
+# Python (reference implementation)
+make keygen-mldsa44
+
+# C++ (faster, recommended)
+make keygen-cpp-mldsa44
+```
+
+**Custom Algorithm and Output Directory:**
+```bash
+# Syntax: make keygen ALG=<algorithm> [OUT=<directory>]
+#         make keygen-cpp ALG=<algorithm> [OUT=<directory>]
+
+# Examples:
+make keygen ALG=mldsa65                      # Python, default ./keys/
+make keygen-cpp ALG=slh-shake-256f           # C++, default ./keys/
+make keygen-cpp ALG=slh-sha2-128f OUT=./my-keys  # Custom output dir
+```
+
+**Available Algorithms:**
+| Algorithm | Type | Security | Signature Size |
+|-----------|------|----------|----------------|
+| `mldsa44` | ML-DSA | Category 1 | 2,420 B |
+| `mldsa65` | ML-DSA | Category 3 | 3,309 B |
+| `mldsa87` | ML-DSA | Category 5 | 4,627 B |
+| `slh-shake-128f` | SLH-DSA | Category 1 | 17,088 B |
+| `slh-shake-128s` | SLH-DSA | Category 1 | 7,856 B |
+| `slh-shake-192f` | SLH-DSA | Category 3 | 35,664 B |
+| `slh-shake-256f` | SLH-DSA | Category 5 | 49,856 B |
+| `slh-sha2-128f` | SLH-DSA | Category 1 | 17,088 B |
+| `slh-sha2-256f` | SLH-DSA | Category 5 | 49,856 B |
+
+**Shortcut Commands:**
+```bash
+# Python shortcuts:          C++ shortcuts (faster):
+make keygen-mldsa44          make keygen-cpp-mldsa44
+make keygen-mldsa65          make keygen-cpp-mldsa65
+make keygen-mldsa87          make keygen-cpp-mldsa87
+make keygen-slhdsa           make keygen-cpp-slhdsa
+make keygen-slhdsa-small     make keygen-cpp-slhdsa-small
+```
+
+**Output Files:**
+```
+keys/
+├── mldsa44_metadata.json      # Algorithm info and timestamp
+├── mldsa44_public.key         # 1,312 bytes - share this
+├── mldsa44_secret.key         # 2,560 bytes - KEEP SECRET!
+├── slh_shake_128f_metadata.json
+├── slh_shake_128f_public.key  # 32 bytes
+└── slh_shake_128f_secret.key  # 64 bytes
+```
+
+**View Key Metadata:**
+```bash
+cat keys/mldsa65_metadata.json
+```
+```json
+{
+  "algorithm": "MLDSA65",
+  "type": "ML-DSA (FIPS 204)",
+  "created": "2025-12-18T23:19:00Z",
+  "public_key_size": 1952,
+  "secret_key_size": 4032,
+  "public_key_file": "mldsa65_public.key",
+  "secret_key_file": "mldsa65_secret.key"
+}
+```
+
 ### When to Use Each Algorithm
 
 | Scenario | Recommended | Reason |
@@ -379,10 +453,13 @@ dsa/
 │   ├── py/                      # Python examples
 │   │   ├── api_authentication.py
 │   │   ├── document_signing.py
-│   │   └── comparison.py
+│   │   ├── comparison.py
+│   │   └── generate_keys.py     # Key generation tool
 │   └── cpp/                     # C++ examples
 │       ├── mldsa_certificate.cpp
-│       └── slhdsa_certificate.cpp
+│       ├── slhdsa_certificate.cpp
+│       └── generate_keys.cpp    # Key generation tool
+├── keys/                        # Generated keys (created by keygen)
 ├── Dockerfile                   # Python Docker image
 ├── Dockerfile.cpp               # C++ Docker image
 ├── Makefile
@@ -482,6 +559,11 @@ bool valid = slh_verify(SLH_DSA_SHAKE_128f, message, sig, pk);
 | `make demo-cpp` | C++ ML-DSA + SLH-DSA demo |
 | `make cert-mldsa` | ML-DSA certificate example (C++) |
 | `make cert-slhdsa` | SLH-DSA certificate example (C++) |
+| `make keygen ALG=<alg>` | Generate keys (Python) |
+| `make keygen-cpp ALG=<alg>` | Generate keys (C++, faster) |
+| `make keygen-cpp-mldsa44` | Generate ML-DSA-44 keys (C++) |
+| `make keygen-cpp-mldsa65` | Generate ML-DSA-65 keys (C++) |
+| `make keygen-cpp-slhdsa` | Generate SLH-DSA-SHAKE-128f keys (C++) |
 | `make clean` | Remove Docker resources |
 
 ---

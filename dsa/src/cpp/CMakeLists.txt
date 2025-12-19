@@ -109,6 +109,20 @@ target_include_directories(slhdsa_cert_example PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Key Generation Tool
+add_executable(generate_keys
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/cpp/generate_keys.cpp
+)
+
+target_link_libraries(generate_keys PRIVATE
+    mldsa
+    slhdsa
+)
+
+target_include_directories(generate_keys PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 # Install targets
 install(TARGETS mldsa slhdsa
     ARCHIVE DESTINATION lib

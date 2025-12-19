@@ -43,11 +43,23 @@ help:
 	@echo "  make cert-slhdsa  - SLH-DSA certificate example"
 	@echo ""
 	@echo "Key Generation (saves to ./keys/):"
-	@echo "  make keygen-mldsa44     - Generate ML-DSA-44 key pair"
-	@echo "  make keygen-mldsa65     - Generate ML-DSA-65 key pair"
-	@echo "  make keygen-mldsa87     - Generate ML-DSA-87 key pair"
-	@echo "  make keygen-slhdsa      - Generate SLH-DSA-SHAKE-128f key pair"
-	@echo "  make keygen-slhdsa-small- Generate SLH-DSA-SHAKE-128s key pair"
+	@echo "  make keygen ALG=<alg> [OUT=<dir>]      - Generate keys (Python)"
+	@echo "  make keygen-cpp ALG=<alg> [OUT=<dir>]  - Generate keys (C++, faster)"
+	@echo ""
+	@echo "  Python shortcuts:     C++ shortcuts:"
+	@echo "    keygen-mldsa44        keygen-cpp-mldsa44"
+	@echo "    keygen-mldsa65        keygen-cpp-mldsa65"
+	@echo "    keygen-mldsa87        keygen-cpp-mldsa87"
+	@echo "    keygen-slhdsa         keygen-cpp-slhdsa"
+	@echo "    keygen-slhdsa-small   keygen-cpp-slhdsa-small"
+	@echo ""
+	@echo "  Algorithms: mldsa44, mldsa65, mldsa87"
+	@echo "              slh-shake-128f/s, slh-shake-192f/s, slh-shake-256f/s"
+	@echo "              slh-sha2-128f/s, slh-sha2-192f/s, slh-sha2-256f/s"
+	@echo ""
+	@echo "  Examples:"
+	@echo "    make keygen ALG=mldsa65"
+	@echo "    make keygen-cpp ALG=slh-sha2-256f OUT=./my-keys"
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev          - Run Python tests with mounted source"
@@ -114,29 +126,52 @@ shell: build-py
 		python
 
 # Key generation targets (with mounted volume)
+# Usage: make keygen ALG=mldsa44 [OUT=./keys]
+#        make keygen-cpp ALG=mldsa44 [OUT=./keys]
+ALG ?= mldsa44
+OUT ?= ./keys
+
+# Python key generation
 keygen: build-py
-	@echo "Usage: make keygen-mldsa44, keygen-mldsa65, keygen-slhdsa, etc."
-	@echo "Keys will be saved to ./keys/ directory"
+	@mkdir -p $(OUT)
+	docker run --rm -v $(PWD)/$(OUT):/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py $(ALG) /keys
 
-keygen-mldsa44: build-py
-	@mkdir -p keys
-	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py mldsa44 /keys
+# C++ key generation (faster)
+keygen-cpp: build-cpp
+	@mkdir -p $(OUT)
+	docker run --rm -v $(PWD)/$(OUT):/keys $(IMAGE_NAME_CPP) ./build/generate_keys $(ALG) /keys
 
-keygen-mldsa65: build-py
-	@mkdir -p keys
-	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py mldsa65 /keys
+# Shortcut targets for common algorithms (Python)
+keygen-mldsa44: ALG=mldsa44
+keygen-mldsa44: keygen
 
-keygen-mldsa87: build-py
-	@mkdir -p keys
-	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py mldsa87 /keys
+keygen-mldsa65: ALG=mldsa65
+keygen-mldsa65: keygen
 
-keygen-slhdsa: build-py
-	@mkdir -p keys
-	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py slh-shake-128f /keys
+keygen-mldsa87: ALG=mldsa87
+keygen-mldsa87: keygen
 
-keygen-slhdsa-small: build-py
-	@mkdir -p keys
-	docker run --rm -v $(PWD)/keys:/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py slh-shake-128s /keys
+keygen-slhdsa: ALG=slh-shake-128f
+keygen-slhdsa: keygen
+
+keygen-slhdsa-small: ALG=slh-shake-128s
+keygen-slhdsa-small: keygen
+
+# Shortcut targets for common algorithms (C++)
+keygen-cpp-mldsa44: ALG=mldsa44
+keygen-cpp-mldsa44: keygen-cpp
+
+keygen-cpp-mldsa65: ALG=mldsa65
+keygen-cpp-mldsa65: keygen-cpp
+
+keygen-cpp-mldsa87: ALG=mldsa87
+keygen-cpp-mldsa87: keygen-cpp
+
+keygen-cpp-slhdsa: ALG=slh-shake-128f
+keygen-cpp-slhdsa: keygen-cpp
+
+keygen-cpp-slhdsa-small: ALG=slh-shake-128s
+keygen-cpp-slhdsa-small: keygen-cpp
 
 # Demo targets
 demo-api: build-py
