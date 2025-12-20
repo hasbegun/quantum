@@ -19,6 +19,7 @@ WORKDIR /app
 COPY src/cpp/ ./src/cpp/
 COPY tests/cpp/ ./tests/cpp/
 COPY examples/cpp/ ./examples/cpp/
+COPY examples/app/ ./examples/app/
 
 # Create build directory and build
 RUN mkdir -p build && cd build && \

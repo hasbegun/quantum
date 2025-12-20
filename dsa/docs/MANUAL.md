@@ -127,28 +127,40 @@ Firmware updates (size matters)? ──────────────► M
 
 ## Key Generation
 
+Key generation now supports X.509-like certificate parameters, similar to OpenSSL RSA key generation.
+
 ### Using Docker (Recommended)
 
 ```bash
 # Build the image first
 make build-cpp
 
-# Generate ML-DSA-44 keys
-make keygen-cpp ALG=mldsa44 OUT=./keys
-
-# Generate ML-DSA-65 keys
+# Basic key generation
 make keygen-cpp ALG=mldsa65 OUT=./keys
 
-# Generate ML-DSA-87 keys
-make keygen-cpp ALG=mldsa87 OUT=./keys
+# Key generation with certificate parameters
+make keygen-cpp ALG=mldsa65 OUT=./keys \
+    CN=api.example.com \
+    ORG="Example Corp" \
+    COUNTRY=US \
+    STATE=California \
+    DAYS=730
 
-# Generate SLH-DSA keys
-make keygen-cpp ALG=slh-shake-128f OUT=./keys
+# All certificate options:
+#   CN=<name>        Common Name (e.g., CN=api.example.com)
+#   ORG=<name>       Organization (e.g., ORG="My Company")
+#   OU=<name>        Organizational Unit
+#   COUNTRY=<code>   2-letter country code (e.g., COUNTRY=US)
+#   STATE=<name>     State or Province
+#   LOCALITY=<name>  City
+#   EMAIL=<email>    Email address
+#   DAYS=<n>         Validity period in days (default: 365)
+#   SERIAL=<hex>     Serial number in hex (optional)
 
 # Keys are saved to:
 # ./keys/<algorithm>_public.key
 # ./keys/<algorithm>_secret.key
-# ./keys/<algorithm>_metadata.json
+# ./keys/<algorithm>_certificate.json
 ```
 
 **Direct Docker commands:**
@@ -156,13 +168,54 @@ make keygen-cpp ALG=slh-shake-128f OUT=./keys
 ```bash
 # Generate keys with Docker directly
 docker run --rm -v $(pwd)/keys:/keys dsa-cpp \
-    ./build/generate_keys mldsa65 /keys
+    ./build/generate_keys mldsa65 /keys \
+    --cn "api.example.com" \
+    --org "Example Corp" \
+    --country "US" \
+    --days 730
 
 # List generated keys
 ls -la keys/
-# mldsa65_public.key   (1952 bytes)
-# mldsa65_secret.key   (4032 bytes)
-# mldsa65_metadata.json
+# mldsa65_public.key       (1952 bytes)
+# mldsa65_secret.key       (4032 bytes)
+# mldsa65_certificate.json
+```
+
+### Certificate JSON Format
+
+The generated certificate JSON includes all metadata:
+
+```json
+{
+  "version": 1,
+  "algorithm": "MLDSA65",
+  "type": "ML-DSA",
+  "standard": "FIPS 204",
+  "subject": {
+    "commonName": "api.example.com",
+    "organization": "Example Corp",
+    "organizationalUnit": "",
+    "country": "US",
+    "state": "California",
+    "locality": "",
+    "email": "",
+    "dn": "C=US, ST=California, O=Example Corp, CN=api.example.com"
+  },
+  "validity": {
+    "notBefore": "2025-12-20T06:41:05Z",
+    "notAfter": "2027-12-20T06:41:05Z",
+    "days": 730
+  },
+  "serialNumber": "1d92ece3bdc774e3",
+  "keyInfo": {
+    "publicKeySize": 1952,
+    "secretKeySize": 4032,
+    "signatureSize": 3309,
+    "publicKeyFile": "mldsa65_public.key",
+    "secretKeyFile": "mldsa65_secret.key"
+  },
+  "created": "2025-12-20T06:41:05Z"
+}
 ```
 
 ### Using C++ API

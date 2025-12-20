@@ -44,23 +44,36 @@ help:
 	@echo "  make cert-slhdsa  - SLH-DSA certificate example"
 	@echo ""
 	@echo "Key Generation (saves to ./keys/):"
-	@echo "  make keygen ALG=<alg> [OUT=<dir>]      - Generate keys (Python)"
-	@echo "  make keygen-cpp ALG=<alg> [OUT=<dir>]  - Generate keys (C++, faster)"
-	@echo ""
-	@echo "  Python shortcuts:     C++ shortcuts:"
-	@echo "    keygen-mldsa44        keygen-cpp-mldsa44"
-	@echo "    keygen-mldsa65        keygen-cpp-mldsa65"
-	@echo "    keygen-mldsa87        keygen-cpp-mldsa87"
-	@echo "    keygen-slhdsa         keygen-cpp-slhdsa"
-	@echo "    keygen-slhdsa-small   keygen-cpp-slhdsa-small"
+	@echo "  make keygen ALG=<alg> [OUT=<dir>] [options]     - Generate keys (Python)"
+	@echo "  make keygen-cpp ALG=<alg> [OUT=<dir>] [options] - Generate keys (C++, faster)"
 	@echo ""
 	@echo "  Algorithms: mldsa44, mldsa65, mldsa87"
 	@echo "              slh-shake-128f/s, slh-shake-192f/s, slh-shake-256f/s"
 	@echo "              slh-sha2-128f/s, slh-sha2-192f/s, slh-sha2-256f/s"
 	@echo ""
+	@echo "  Certificate Options (like OpenSSL):"
+	@echo "    CN=<name>        Common Name (e.g., CN=api.example.com)"
+	@echo "    ORG=<name>       Organization (e.g., ORG='My Company')"
+	@echo "    OU=<name>        Organizational Unit"
+	@echo "    COUNTRY=<code>   2-letter country code (e.g., COUNTRY=US)"
+	@echo "    STATE=<name>     State or Province"
+	@echo "    LOCALITY=<name>  City"
+	@echo "    EMAIL=<email>    Email address"
+	@echo "    DAYS=<n>         Validity period in days (default: 365)"
+	@echo "    SERIAL=<hex>     Serial number in hex"
+	@echo ""
 	@echo "  Examples:"
-	@echo "    make keygen ALG=mldsa65"
-	@echo "    make keygen-cpp ALG=slh-sha2-256f OUT=./my-keys"
+	@echo "    make keygen-cpp ALG=mldsa65"
+	@echo "    make keygen-cpp ALG=mldsa65 CN=api.example.com ORG='My Corp' DAYS=730"
+	@echo "    make keygen ALG=slh-shake-256f OUT=./my-keys CN='Firmware Signing'"
+	@echo ""
+	@echo "  Shortcut targets:"
+	@echo "    Python:             C++:"
+	@echo "    keygen-mldsa44      keygen-cpp-mldsa44"
+	@echo "    keygen-mldsa65      keygen-cpp-mldsa65"
+	@echo "    keygen-mldsa87      keygen-cpp-mldsa87"
+	@echo "    keygen-slhdsa       keygen-cpp-slhdsa"
+	@echo "    keygen-slhdsa-small keygen-cpp-slhdsa-small"
 	@echo ""
 	@echo "Development:"
 	@echo "  make dev          - Run Python tests with mounted source"
@@ -127,20 +140,61 @@ shell: build-py
 		python
 
 # Key generation targets (with mounted volume)
-# Usage: make keygen ALG=mldsa44 [OUT=./keys]
-#        make keygen-cpp ALG=mldsa44 [OUT=./keys]
+# Usage: make keygen ALG=mldsa44 [OUT=./keys] [CN=...] [ORG=...] etc.
+#        make keygen-cpp ALG=mldsa44 [OUT=./keys] [CN=...] [ORG=...] etc.
 ALG ?= mldsa44
 OUT ?= ./keys
+
+# Certificate parameters (optional)
+CN ?=
+ORG ?=
+OU ?=
+COUNTRY ?=
+STATE ?=
+LOCALITY ?=
+EMAIL ?=
+DAYS ?=
+SERIAL ?=
+
+# Build certificate options string
+CERT_OPTS :=
+ifneq ($(CN),)
+  CERT_OPTS += --cn "$(CN)"
+endif
+ifneq ($(ORG),)
+  CERT_OPTS += --org "$(ORG)"
+endif
+ifneq ($(OU),)
+  CERT_OPTS += --ou "$(OU)"
+endif
+ifneq ($(COUNTRY),)
+  CERT_OPTS += --country "$(COUNTRY)"
+endif
+ifneq ($(STATE),)
+  CERT_OPTS += --state "$(STATE)"
+endif
+ifneq ($(LOCALITY),)
+  CERT_OPTS += --locality "$(LOCALITY)"
+endif
+ifneq ($(EMAIL),)
+  CERT_OPTS += --email "$(EMAIL)"
+endif
+ifneq ($(DAYS),)
+  CERT_OPTS += --days $(DAYS)
+endif
+ifneq ($(SERIAL),)
+  CERT_OPTS += --serial "$(SERIAL)"
+endif
 
 # Python key generation
 keygen: build-py
 	@mkdir -p $(OUT)
-	docker run --rm -v $(PWD)/$(OUT):/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py $(ALG) /keys
+	docker run --rm -v $(PWD)/$(OUT):/keys $(IMAGE_NAME_PY) python examples/py/generate_keys.py $(ALG) /keys $(CERT_OPTS)
 
 # C++ key generation (faster)
 keygen-cpp: build-cpp
 	@mkdir -p $(OUT)
-	docker run --rm -v $(PWD)/$(OUT):/keys $(IMAGE_NAME_CPP) ./build/generate_keys $(ALG) /keys
+	docker run --rm -v $(PWD)/$(OUT):/keys $(IMAGE_NAME_CPP) ./build/generate_keys $(ALG) /keys $(CERT_OPTS)
 
 # Shortcut targets for common algorithms (Python)
 keygen-mldsa44: ALG=mldsa44
