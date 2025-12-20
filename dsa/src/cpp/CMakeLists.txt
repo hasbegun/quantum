@@ -164,6 +164,34 @@ target_include_directories(test_slhdsa_kat PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+# Demo App Server
+add_executable(demo_server
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/app/server.cpp
+)
+
+target_link_libraries(demo_server PRIVATE
+    mldsa
+    slhdsa
+)
+
+target_include_directories(demo_server PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# Demo App Client
+add_executable(demo_client
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../examples/app/client.cpp
+)
+
+target_link_libraries(demo_client PRIVATE
+    mldsa
+    slhdsa
+)
+
+target_include_directories(demo_client PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 # CTest support
 enable_testing()
 add_test(NAME mldsa_tests COMMAND test_mldsa)

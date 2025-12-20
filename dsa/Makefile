@@ -37,6 +37,7 @@ help:
 	@echo "  make demo-document- Document signing (SLH-DSA Python)"
 	@echo "  make demo-compare - Compare ML-DSA vs SLH-DSA (Python)"
 	@echo "  make demo-cpp     - Run C++ ML-DSA + SLH-DSA demo"
+	@echo "  make demo-app [ALG=<alg>] - Multi-container client/server demo"
 	@echo ""
 	@echo "Certificate Examples (C++):"
 	@echo "  make cert-mldsa   - ML-DSA certificate example"
@@ -192,6 +193,15 @@ cert-mldsa: build-cpp
 
 cert-slhdsa: build-cpp
 	docker run --rm $(IMAGE_NAME_CPP) ./build/slhdsa_cert_example
+
+# Multi-container demo app
+# Usage: make demo-app [ALG=mldsa44]
+demo-app:
+	cd examples/app && ALGORITHM=$(ALG) docker-compose up --build --abort-on-container-exit
+	cd examples/app && docker-compose down
+
+demo-app-down:
+	cd examples/app && docker-compose down --rmi local
 
 # Cleanup
 clean:

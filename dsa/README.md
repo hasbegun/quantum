@@ -336,6 +336,43 @@ cat keys/mldsa65_metadata.json
 }
 ```
 
+### Example 6: Multi-Container Demo App
+
+A complete client/server demo showing how post-quantum signatures work in distributed systems.
+
+**Architecture:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CLIENT (Secret Key)                      │
+│         Signs messages and sends to servers                 │
+└───────────────────────┬─────────────────┬───────────────────┘
+                        │                 │
+                        ▼                 ▼
+┌───────────────────────────┐   ┌───────────────────────────┐
+│   SERVER 1 (Public Key)   │   │   SERVER 2 (Public Key)   │
+│   Verifies signatures     │   │   Verifies signatures     │
+└───────────────────────────┘   └───────────────────────────┘
+```
+
+**Run the demo:**
+```bash
+# Default (ML-DSA-44)
+make demo-app
+
+# With specific algorithm
+make demo-app ALG=mldsa65
+make demo-app ALG=slh-shake-128f
+```
+
+**What it demonstrates:**
+1. Client generates a key pair
+2. Client registers public key with both servers
+3. Client signs messages with secret key
+4. Servers verify signatures with public key
+5. Tampered messages are rejected
+
+See [examples/app/README.md](examples/app/README.md) for details.
+
 ### When to Use Each Algorithm
 
 | Scenario | Recommended | Reason |
@@ -455,10 +492,14 @@ dsa/
 │   │   ├── document_signing.py
 │   │   ├── comparison.py
 │   │   └── generate_keys.py     # Key generation tool
-│   └── cpp/                     # C++ examples
-│       ├── mldsa_certificate.cpp
-│       ├── slhdsa_certificate.cpp
-│       └── generate_keys.cpp    # Key generation tool
+│   ├── cpp/                     # C++ examples
+│   │   ├── mldsa_certificate.cpp
+│   │   ├── slhdsa_certificate.cpp
+│   │   └── generate_keys.cpp    # Key generation tool
+│   └── app/                     # Multi-container demo app
+│       ├── client.py            # Signing client (holds secret key)
+│       ├── server.py            # Verification server (holds public key)
+│       └── docker-compose.yml   # Container orchestration
 ├── keys/                        # Generated keys (created by keygen)
 ├── Dockerfile                   # Python Docker image
 ├── Dockerfile.cpp               # C++ Docker image
@@ -557,6 +598,7 @@ bool valid = slh_verify(SLH_DSA_SHAKE_128f, message, sig, pk);
 | `make demo-document` | Document signing example |
 | `make demo-compare` | Algorithm comparison |
 | `make demo-cpp` | C++ ML-DSA + SLH-DSA demo |
+| `make demo-app [ALG=<alg>]` | Multi-container client/server demo |
 | `make cert-mldsa` | ML-DSA certificate example (C++) |
 | `make cert-slhdsa` | SLH-DSA certificate example (C++) |
 | `make keygen ALG=<alg>` | Generate keys (Python) |
@@ -614,6 +656,12 @@ For production use:
 
 ## Documentation
 
+- **[User's Manual](MANUAL.md)** - Complete guide for installation, usage, and integration:
+  - Installation (Docker, C++, Python)
+  - Key generation and management
+  - Use cases: API auth, document signing, firmware signing
+  - Web server integration (Nginx, Caddy) with Docker examples
+  - Security considerations
 - **[Security Assessment](docs/SECURITY_ASSESSMENT.md)** - Side-channel attack analysis and vulnerability assessment
 - **[KAT Tests](docs/KAT_TESTS.md)** - NIST Known Answer Test documentation and compliance status
 - **[Certificate Guide](docs/CERTIFICATE_GUIDE.md)** - Comprehensive guide on creating post-quantum certificates with ML-DSA and SLH-DSA, including:
